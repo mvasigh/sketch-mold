@@ -25,10 +25,55 @@ impl Particle {
             turn_angle: TURN_ANGLE,
         }
     }
+
+    pub fn random() -> Particle {
+        let x = random_range(0.0, WIDTH as f32);
+        let y = random_range(0.0, HEIGHT as f32);
+
+        Particle::new(x, y)
+    }
+
+    pub fn update(&self) {
+        // TODO
+    }
+}
+
+struct Cell {
+    intensity: f32,
+}
+
+struct Grid {
+    cells: Vec<Cell>,
+    width: usize,
+    height: usize,
+}
+
+impl Grid {
+    pub fn new(width: usize, height: usize) -> Grid {
+        let cells = (0..width * height)
+            .map(|_| Cell { intensity: 0.0 })
+            .collect();
+
+        Grid {
+            cells,
+            width,
+            height,
+        }
+    }
+
+    pub fn update(&self) {
+        // TODO
+    }
+
+    pub fn draw(&self) {
+        // TODO
+    }
 }
 
 struct Model {
     _window: WindowId,
+    grid: Grid,
+    particles: Vec<Particle>,
 }
 
 fn main() {
@@ -43,7 +88,14 @@ fn model(app: &App) -> Model {
         .build()
         .unwrap();
 
-    Model { _window }
+    let grid = Grid::new(WIDTH, HEIGHT);
+    let particles = (0..100).map(|_| Particle::random()).collect();
+
+    Model {
+        _window,
+        grid,
+        particles,
+    }
 }
 
 fn update(_app: &App, _model: &mut Model, _update: Update) {}
