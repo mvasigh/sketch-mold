@@ -2,13 +2,12 @@ use nannou::prelude::*;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
-const HEADING_ANGLE: f32 = 1.0;
-const HEADING_DISTANCE: f32 = 1.0;
-const SENSE_ANGLE: f32 = 1.0;
-const SENSE_DISTANCE: f32 = 1.0;
-const TURN_ANGLE: f32 = 1.0;
-const DEPOSIT_AMOUNT: f32 = 0.7;
-const DECAY_AMOUNT: f32 = 0.01;
+const HEADING_DISTANCE: f32 = 0.8;
+const SENSE_ANGLE: f32 = 1.5;
+const SENSE_DISTANCE: f32 = 4.0;
+const TURN_ANGLE: f32 = 0.75;
+const DEPOSIT_AMOUNT: f32 = 0.8;
+const DECAY_AMOUNT: f32 = 0.02;
 
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
@@ -40,17 +39,11 @@ struct Particle {
     turn_angle: f32,
 }
 
-enum ParticleSensorKind {
-    Left,
-    Center,
-    Right,
-}
-
 impl Particle {
     pub fn new(x: f32, y: f32) -> Particle {
         Particle {
             pos: vec2(x, y),
-            heading_angle: HEADING_ANGLE,
+            heading_angle: random_range(0.0, 6.28),
             heading_distance: HEADING_DISTANCE,
             sense_angle: SENSE_ANGLE,
             sense_distance: SENSE_DISTANCE,
@@ -92,15 +85,11 @@ impl Particle {
         if left_cell.intensity > center_cell.intensity && left_cell.intensity > right_cell.intensity
         {
             self.heading_angle -= self.turn_angle;
-        }
-
-        if right_cell.intensity > center_cell.intensity
+        } else if right_cell.intensity > center_cell.intensity
             && right_cell.intensity > left_cell.intensity
         {
             self.heading_angle += self.turn_angle;
-        }
-
-        if left_cell.intensity == right_cell.intensity {
+        } else if left_cell.intensity == right_cell.intensity {
             match random_f32() > 0.5 {
                 true => self.heading_angle -= self.turn_angle,
                 false => self.heading_angle += self.turn_angle,
@@ -117,6 +106,25 @@ impl Particle {
             self.heading_distance,
             self.heading_angle,
         ));
+
+        let width = WIDTH as f32;
+        let height = HEIGHT as f32;
+
+        if self.pos.x < 0.0 {
+            self.pos.x = width - self.pos.x;
+        }
+
+        if self.pos.x > width {
+            self.pos.x = self.pos.x - width;
+        }
+
+        if self.pos.y < 0.0 {
+            self.pos.y = width - self.pos.y;
+        }
+
+        if self.pos.y > height {
+            self.pos.y = height - self.pos.y;
+        }
     }
 }
 
@@ -197,7 +205,13 @@ impl Grid {
         let height = self.height as u32;
         let image = nannou::image::ImageBuffer::from_fn(width, height, |x, y| {
             let cell = self.cell_at(x as usize, y as usize);
-            let color = map_range(clamp(cell.intensity, 0.0, 1.0), 0.0, 1.0, 0, std::u8::MAX);
+            let color = map_range(
+                clamp(cell.intensity, 0.0, 1.0),
+                0.0,
+                1.0,
+                3,
+                std::u8::MAX - 5,
+            );
 
             nannou::image::Rgba([color, color, color, std::u8::MAX])
         });
@@ -235,7 +249,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let grid = Grid::new(WIDTH, HEIGHT);
-    let particles = (0..2000).map(|_| Particle::random()).collect();
+    let particles = (0..20000).map(|_| Particle::random()).collect();
     let texture = wgpu::TextureBuilder::new()
         .size([width, height])
         .format(wgpu::TextureFormat::Rgba8Unorm)
