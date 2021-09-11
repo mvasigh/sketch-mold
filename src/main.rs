@@ -5,7 +5,7 @@ const HEIGHT: usize = 800;
 const HEADING_DISTANCE: f32 = 0.8;
 const SENSE_ANGLE: f32 = 1.5;
 const SENSE_DISTANCE: f32 = 4.0;
-const TURN_ANGLE: f32 = 0.75;
+const TURN_ANGLE: f32 = 0.2;
 const DEPOSIT_AMOUNT: f32 = 0.8;
 const DECAY_AMOUNT: f32 = 0.02;
 
@@ -249,7 +249,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let grid = Grid::new(WIDTH, HEIGHT);
-    let particles = (0..20000).map(|_| Particle::random()).collect();
+    let particles = (0..10000).map(|_| Particle::random()).collect();
     let texture = wgpu::TextureBuilder::new()
         .size([width, height])
         .format(wgpu::TextureFormat::Rgba8Unorm)
