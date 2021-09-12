@@ -13,7 +13,7 @@ const BLUR_RADIUS: isize = 1;
 
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
-    let y = (pt.y - (WIDTH as f32 / 2.0)).abs();
+    let y = (pt.y - (WIDTH as f32 / 2.0)) * -1.0;
 
     vec2(x, y)
 }
@@ -266,13 +266,7 @@ impl Grid {
         let height = self.height as u32;
         let image = nannou::image::ImageBuffer::from_fn(width, height, |x, y| {
             let cell = self.cell_at(x as usize, y as usize);
-            let color = map_range(
-                clamp(cell.intensity, 0.0, 1.0),
-                0.0,
-                1.0,
-                3,
-                std::u8::MAX - 5,
-            );
+            let color = map_range(clamp(cell.intensity, 0.0, 1.0), 0.0, 1.0, 0, std::u8::MAX);
 
             nannou::image::Rgba([color, color, color, std::u8::MAX])
         });
