@@ -2,17 +2,17 @@ use nannou::prelude::*;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
-const NUM_PARTICLES: usize = 200000;
-const HEADING_DISTANCE: f32 = 2.2;
-const SENSE_ANGLE: f32 = 0.5;
-const SENSE_DISTANCE: f32 = 2.5;
-const TURN_ANGLE: f32 = 0.3;
+const NUM_PARTICLES: usize = 400000;
+const HEADING_DISTANCE: f32 = 3.0;
+const SENSE_ANGLE: f32 = 0.7;
+const SENSE_DISTANCE: f32 = 15.0;
+const TURN_ANGLE: f32 = 0.6;
 const DEPOSIT_AMOUNT: f32 = 0.4;
-const DECAY_AMOUNT: f32 = 0.05;
+const DECAY_AMOUNT: f32 = 0.012;
 const BLUR_RADIUS: isize = 1;
 
-const MIN_COLOR: [u8; 3] = [0, 0, 0];
-const MAX_COLOR: [u8; 3] = [255, 255, 255];
+const MAX_COLOR: [u8; 3] = [0, 0, 0];
+const MIN_COLOR: [u8; 3] = [255, 255, 255];
 
 const IMG_OUTPUT: bool = false;
 
@@ -170,7 +170,7 @@ impl Grid {
     pub fn new(width: usize, height: usize) -> Grid {
         let cells = (0..width * height)
             .map(|_| Cell {
-                intensity: random_f32(),
+                intensity: clamp(random_f32(), 0.0, 0.2),
             })
             .collect();
 
