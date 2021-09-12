@@ -1,0 +1,1 @@
+ffmpeg -r 60 -f image2 -s 800x800 -i ./out/img%04d.png -vcodec libx264 -crf 25 -vframes 3772  -pix_fmt yuv420p ./output.mp4

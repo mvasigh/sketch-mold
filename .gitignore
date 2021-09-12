@@ -1,2 +1,5 @@
 /target
 Cargo.lock
+/out/*
+output.mp4
+.DS_Store

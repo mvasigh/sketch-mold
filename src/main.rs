@@ -14,6 +14,8 @@ const BLUR_RADIUS: isize = 1;
 const MIN_COLOR: [u8; 3] = [0, 0, 0];
 const MAX_COLOR: [u8; 3] = [255, 255, 255];
 
+const IMG_OUTPUT: bool = false;
+
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
     let y = (pt.y - (WIDTH as f32 / 2.0)) * -1.0;
@@ -269,11 +271,29 @@ impl Grid {
         let height = self.height as u32;
         let image = nannou::image::ImageBuffer::from_fn(width, height, |x, y| {
             let cell = self.cell_at(x as usize, y as usize);
-            let min = 0.1;
+            let min = 0.12;
 
-            let r = map_range(clamp(cell.intensity, min, 1.0), min, 1.0, MIN_COLOR[0], MAX_COLOR[0]);
-            let g = map_range(clamp(cell.intensity, min, 1.0), min, 1.0, MIN_COLOR[1], MAX_COLOR[1]);
-            let b = map_range(clamp(cell.intensity, min, 1.0), min, 1.0, MIN_COLOR[2], MAX_COLOR[2]);
+            let r = map_range(
+                clamp(cell.intensity, min, 1.0),
+                min,
+                1.0,
+                MIN_COLOR[0],
+                MAX_COLOR[0],
+            );
+            let g = map_range(
+                clamp(cell.intensity, min, 1.0),
+                min,
+                1.0,
+                MIN_COLOR[1],
+                MAX_COLOR[1],
+            );
+            let b = map_range(
+                clamp(cell.intensity, min, 1.0),
+                min,
+                1.0,
+                MIN_COLOR[2],
+                MAX_COLOR[2],
+            );
 
             nannou::image::Rgba([r, g, b, std::u8::MAX])
         });
@@ -337,12 +357,21 @@ fn update(_app: &App, model: &mut Model, _update: Update) {
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
+    let window = app
+        .window(model._window)
+        .expect("Could not get the main window");
+
     let draw = app.draw();
 
     draw.background().color(BLACK);
 
     // Paint the grid!
     model.grid.draw(app, model, &frame, &draw);
+
+    if IMG_OUTPUT {
+        let filename = format!("./out/img{:04}.png", app.elapsed_frames());
+        window.capture_frame(filename);
+    }
 
     draw.to_frame(app, &frame).unwrap();
 }
