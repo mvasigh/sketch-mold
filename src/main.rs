@@ -2,13 +2,14 @@ use nannou::prelude::*;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
-const NUM_PARTICLES: usize = 30000;
-const HEADING_DISTANCE: f32 = 0.8;
-const SENSE_ANGLE: f32 = 1.5;
-const SENSE_DISTANCE: f32 = 2.0;
-const TURN_ANGLE: f32 = 0.4;
-const DEPOSIT_AMOUNT: f32 = 0.4;
-const DECAY_AMOUNT: f32 = 0.02;
+const NUM_PARTICLES: usize = 100000;
+const HEADING_DISTANCE: f32 = 2.0;
+const SENSE_ANGLE: f32 = 0.3;
+const SENSE_DISTANCE: f32 = 2.5;
+const TURN_ANGLE: f32 = 0.3;
+const DEPOSIT_AMOUNT: f32 = 0.2;
+const DECAY_AMOUNT: f32 = 0.06;
+const BLUR_RADIUS: isize = 1;
 
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
@@ -29,6 +30,16 @@ fn move_coords(curr: Vector2, d: f32, angle: f32) -> Vector2 {
     let y = curr.y + (d * angle.sin());
 
     vec2(x, y)
+}
+
+fn inf_coords(x: isize, y: isize) -> usize {
+    let w = WIDTH as isize;
+    let h = HEIGHT as isize;
+    let ind_x = (x + w) % w;
+    let ind_y = (y + h) % h;
+    let index = (ind_y * h) + ind_x;
+
+    index as usize
 }
 
 struct Particle {
@@ -57,6 +68,10 @@ impl Particle {
         let y = random_range(0.0, HEIGHT as f32);
 
         Particle::new(x, y)
+    }
+
+    pub fn center() -> Particle {
+        Particle::new((WIDTH / 2) as f32, (HEIGHT / 2) as f32)
     }
 
     pub fn update(&mut self, grid: &mut Grid) {
@@ -125,6 +140,7 @@ impl Particle {
     }
 }
 
+#[derive(Clone, Debug, Copy)]
 struct Cell {
     intensity: f32,
 }
@@ -165,36 +181,84 @@ impl Grid {
     }
 
     pub fn cell_at_pt(&self, loc: Vector2<f32>) -> &Cell {
-        let x_size = loc.x as usize;
-        let y_size = loc.y as usize;
+        let w = self.width as f32;
+        let h = self.height as f32;
 
-        let x = (self.width + x_size) % self.width;
-        let y = (self.height + y_size) % self.height;
+        let x = ((w + loc.x) % w) as usize;
+        let y = ((h + loc.y) % h) as usize;
 
-        &self.cells[(x * self.width) + y as usize]
+        &self.cells[(x * self.width) + y]
     }
 
     pub fn cell_at_pt_mut(&mut self, loc: Vector2<f32>) -> &mut Cell {
-        let x_size = loc.x as usize;
-        let y_size = loc.y as usize;
+        let w = self.width as f32;
+        let h = self.height as f32;
 
-        let x = (self.width + x_size) % self.width;
-        let y = (self.height + y_size) % self.height;
+        let x = ((w + loc.x) % w) as usize;
+        let y = ((h + loc.y) % h) as usize;
 
-        &mut self.cells[(x * self.width) + y as usize]
-    }
-
-    pub fn cell_at_mut(&mut self, row: usize, col: usize) -> &mut Cell {
-        &mut self.cells[(row * self.width) + col]
+        &mut self.cells[(x * self.width) + y]
     }
 
     pub fn update(&mut self) {
-        // 1. Decay every cell
+        self.decay();
+        self.blur(BLUR_RADIUS);
+    }
+
+    fn decay(&mut self) {
         for cell in self.cells.iter_mut() {
             cell.decay();
         }
-        // 2. Perform a blur on the trail array
-        // TODO
+    }
+
+    fn blur(&mut self, radius: isize) {
+        let mut new_cells = self.cells.to_vec();
+
+        self.blur_horizontal(&mut new_cells, radius);
+        self.cells = new_cells;
+
+        new_cells = self.cells.to_vec();
+
+        self.blur_vertical(&mut new_cells, radius);
+        self.cells = new_cells;
+    }
+
+    fn blur_horizontal(&mut self, dest: &mut Vec<Cell>, radius: isize) {
+        for y in 0..self.height as isize {
+            let mut total: f32 = 0.0;
+
+            for kx in -radius..radius + 1 {
+                total += self.cells[inf_coords(kx, y)].intensity;
+            }
+
+            dest[inf_coords(0, y)].intensity = total / ((radius * 2 + 1) as f32);
+
+            for x in 1..self.width as isize {
+                total -= self.cells[inf_coords(x - radius - 1, y)].intensity;
+                total += self.cells[inf_coords(x + radius, y)].intensity;
+
+                dest[inf_coords(x, y)].intensity = total / ((radius * 2 + 1) as f32);
+            }
+        }
+    }
+
+    fn blur_vertical(&mut self, dest: &mut Vec<Cell>, radius: isize) {
+        for x in 0..self.width as isize {
+            let mut total: f32 = 0.0;
+
+            for ky in -radius..radius + 1 {
+                total += self.cells[inf_coords(x, ky)].intensity;
+            }
+
+            dest[inf_coords(x, 0)].intensity = total / ((radius * 2 + 1) as f32);
+
+            for y in 1..self.height as isize {
+                total -= self.cells[inf_coords(x, y - radius - 1)].intensity;
+                total += self.cells[inf_coords(x, y + radius)].intensity;
+
+                dest[inf_coords(x, y)].intensity = total / ((radius * 2 + 1) as f32);
+            }
+        }
     }
 
     pub fn draw(&self, app: &App, model: &Model, frame: &Frame, draw: &Draw) {
@@ -246,7 +310,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let grid = Grid::new(WIDTH, HEIGHT);
-    let particles = (0..NUM_PARTICLES).map(|_| Particle::random()).collect();
+    let particles = (0..NUM_PARTICLES).map(|_| Particle::center()).collect();
     let texture = wgpu::TextureBuilder::new()
         .size([width, height])
         .format(wgpu::TextureFormat::Rgba8Unorm)
