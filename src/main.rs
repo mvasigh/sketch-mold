@@ -2,14 +2,17 @@ use nannou::prelude::*;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
-const NUM_PARTICLES: usize = 100000;
-const HEADING_DISTANCE: f32 = 2.0;
-const SENSE_ANGLE: f32 = 0.3;
+const NUM_PARTICLES: usize = 200000;
+const HEADING_DISTANCE: f32 = 2.2;
+const SENSE_ANGLE: f32 = 0.5;
 const SENSE_DISTANCE: f32 = 2.5;
 const TURN_ANGLE: f32 = 0.3;
-const DEPOSIT_AMOUNT: f32 = 0.2;
-const DECAY_AMOUNT: f32 = 0.06;
+const DEPOSIT_AMOUNT: f32 = 0.4;
+const DECAY_AMOUNT: f32 = 0.05;
 const BLUR_RADIUS: isize = 1;
+
+const MIN_COLOR: [u8; 3] = [0, 0, 0];
+const MAX_COLOR: [u8; 3] = [255, 255, 255];
 
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
@@ -266,9 +269,13 @@ impl Grid {
         let height = self.height as u32;
         let image = nannou::image::ImageBuffer::from_fn(width, height, |x, y| {
             let cell = self.cell_at(x as usize, y as usize);
-            let color = map_range(clamp(cell.intensity, 0.0, 1.0), 0.0, 1.0, 0, std::u8::MAX);
+            let min = 0.1;
 
-            nannou::image::Rgba([color, color, color, std::u8::MAX])
+            let r = map_range(clamp(cell.intensity, min, 1.0), min, 1.0, MIN_COLOR[0], MAX_COLOR[0]);
+            let g = map_range(clamp(cell.intensity, min, 1.0), min, 1.0, MIN_COLOR[1], MAX_COLOR[1]);
+            let b = map_range(clamp(cell.intensity, min, 1.0), min, 1.0, MIN_COLOR[2], MAX_COLOR[2]);
+
+            nannou::image::Rgba([r, g, b, std::u8::MAX])
         });
         let flat_samples = image.as_flat_samples();
         model.texture.upload_data(
