@@ -2,19 +2,19 @@ use nannou::prelude::*;
 
 const WIDTH: usize = 800;
 const HEIGHT: usize = 800;
-const NUM_PARTICLES: usize = 200000;
-const HEADING_DISTANCE: f32 = 2.2;
-const SENSE_ANGLE: f32 = 0.5;
-const SENSE_DISTANCE: f32 = 2.5;
-const TURN_ANGLE: f32 = 0.3;
-const DEPOSIT_AMOUNT: f32 = 0.4;
-const DECAY_AMOUNT: f32 = 0.05;
-const BLUR_RADIUS: isize = 1;
+const NUM_PARTICLES: usize = 1000000;
+const HEADING_DISTANCE: f32 = 4.0;
+const SENSE_ANGLE: f32 = 0.21;
+const SENSE_DISTANCE: f32 = 10.0;
+const TURN_ANGLE: f32 = 0.19;
+const DEPOSIT_AMOUNT: f32 = 0.35;
+const DECAY_AMOUNT: f32 = 0.18;
+const BLUR_RADIUS: isize = 4;
 
-const MIN_COLOR: [u8; 3] = [0, 0, 0];
-const MAX_COLOR: [u8; 3] = [255, 255, 255];
+const MAX_COLOR: [u8; 3] = [std::u8::MIN, std::u8::MIN, std::u8::MIN];
+const MIN_COLOR: [u8; 3] = [std::u8::MAX, std::u8::MAX, std::u8::MAX];
 
-const IMG_OUTPUT: bool = false;
+const IMG_OUTPUT: bool = true;
 
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
@@ -152,11 +152,11 @@ struct Cell {
 
 impl Cell {
     pub fn decay(&mut self) {
-        self.intensity = clamp(self.intensity - DECAY_AMOUNT, 0.0, 1.0);
+        self.intensity = clamp(self.intensity - (self.intensity * DECAY_AMOUNT), 0.0, 1.0);
     }
 
     pub fn deposit(&mut self) {
-        self.intensity = clamp(self.intensity + DEPOSIT_AMOUNT, 0.0, 1.0);
+        self.intensity = clamp(self.intensity + (DEPOSIT_AMOUNT * self.intensity), 0.0, 1.0);
     }
 }
 
@@ -273,23 +273,23 @@ impl Grid {
             let cell = self.cell_at(x as usize, y as usize);
             let min = 0.12;
 
-            let r = map_range(
-                clamp(cell.intensity, min, 1.0),
-                min,
+            let g = map_range(
+                clamp(cell.intensity * cell.intensity, min, 1.0),
+                0.0,
                 1.0,
                 MIN_COLOR[0],
                 MAX_COLOR[0],
             );
-            let g = map_range(
+            let r = map_range(
                 clamp(cell.intensity, min, 1.0),
-                min,
+                0.0,
                 1.0,
                 MIN_COLOR[1],
                 MAX_COLOR[1],
             );
             let b = map_range(
-                clamp(cell.intensity, min, 1.0),
-                min,
+                clamp(cell.intensity * cell.intensity * cell.intensity, min, 1.0),
+                0.0,
                 1.0,
                 MIN_COLOR[2],
                 MAX_COLOR[2],
@@ -346,14 +346,15 @@ fn model(app: &App) -> Model {
     }
 }
 
-fn update(_app: &App, model: &mut Model, _update: Update) {
+fn update(_app: &App, model: &mut Model, _update: Update) {    
+    // Update the grid
+    model.grid.update();
     // Update all of the particles
     for particle in model.particles.iter_mut() {
         particle.update(&mut model.grid);
     }
-
     // Update the grid
-    model.grid.update();
+    model.grid.blur(1);
 }
 
 fn view(app: &App, model: &Model, frame: Frame) {
