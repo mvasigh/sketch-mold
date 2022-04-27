@@ -1,18 +1,18 @@
 use nannou::prelude::*;
 
-const WIDTH: usize = 1500;
-const HEIGHT: usize = 500;
-const NUM_PARTICLES: usize = 400000;
-const HEADING_DISTANCE: f32 = 3.3;
-const SENSE_ANGLE: f32 = 0.7;
-const SENSE_DISTANCE: f32 = 15.0;
-const TURN_ANGLE: f32 = 0.6;
-const DEPOSIT_AMOUNT: f32 = 0.4;
-const DECAY_AMOUNT: f32 = 0.012;
+const WIDTH: usize = 1600;
+const HEIGHT: usize = 1600;
+const NUM_PARTICLES: usize = 100000;
+const HEADING_DISTANCE: f32 = 1.7;
+const SENSE_ANGLE: f32 = PI * 0.5;
+const SENSE_DISTANCE: f32 = 2.0;
+const TURN_ANGLE: f32 = PI * 0.25;
+const DEPOSIT_AMOUNT: f32 = 0.25;
+const DECAY_AMOUNT: f32 = 0.052;
 const BLUR_RADIUS: isize = 1;
 
-const MAX_COLOR: [u8; 3] = [0, 0, 0];
-const MIN_COLOR: [u8; 3] = [255, 255, 255];
+const MIN_COLOR: [u8; 3] = [0, 0, 0];
+const MAX_COLOR: [u8; 3] = [255, 102, 62];
 
 const IMG_OUTPUT: bool = true;
 
@@ -57,10 +57,10 @@ struct Particle {
 }
 
 impl Particle {
-    pub fn new(x: f32, y: f32) -> Particle {
+    pub fn new(x: f32, y: f32, a: f32) -> Particle {
         Particle {
             pos: vec2(x, y),
-            heading_angle: random_range(0.0, 6.28),
+            heading_angle: a,
             heading_distance: HEADING_DISTANCE,
             sense_angle: SENSE_ANGLE,
             sense_distance: SENSE_DISTANCE,
@@ -72,11 +72,16 @@ impl Particle {
         let x = random_range(0.0, WIDTH as f32);
         let y = random_range(0.0, HEIGHT as f32);
 
-        Particle::new(x, y)
+        Particle::new(x, y, random_range(0.0, TAU))
     }
 
-    pub fn center() -> Particle {
-        Particle::new((WIDTH / 2) as f32, (HEIGHT / 2) as f32)
+    pub fn center(radius: f32) -> Particle {
+        let r = random_range(0.0, radius);
+        let a = random_range(0.0, 2.0 * PI);
+        let dx = r * f32::cos(a);
+        let dy = r * f32::sin(a);
+
+        Particle::new((WIDTH / 2) as f32 + dx, (HEIGHT / 2) as f32 + dy, a)
     }
 
     pub fn update(&mut self, grid: &mut Grid) {
@@ -338,7 +343,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let grid = Grid::new(WIDTH, HEIGHT);
-    let particles = (0..NUM_PARTICLES).map(|_| Particle::center()).collect();
+    let particles = (0..NUM_PARTICLES).map(|_| Particle::center(380.0)).collect();
     let texture = wgpu::TextureBuilder::new()
         .size([width, height])
         .format(wgpu::TextureFormat::Rgba8Unorm)
