@@ -1,9 +1,9 @@
 use nannou::prelude::*;
 
-const WIDTH: usize = 800;
-const HEIGHT: usize = 800;
+const WIDTH: usize = 1500;
+const HEIGHT: usize = 500;
 const NUM_PARTICLES: usize = 400000;
-const HEADING_DISTANCE: f32 = 3.0;
+const HEADING_DISTANCE: f32 = 3.3;
 const SENSE_ANGLE: f32 = 0.7;
 const SENSE_DISTANCE: f32 = 15.0;
 const TURN_ANGLE: f32 = 0.6;
@@ -14,7 +14,7 @@ const BLUR_RADIUS: isize = 1;
 const MAX_COLOR: [u8; 3] = [0, 0, 0];
 const MIN_COLOR: [u8; 3] = [255, 255, 255];
 
-const IMG_OUTPUT: bool = false;
+const IMG_OUTPUT: bool = true;
 
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
@@ -42,7 +42,7 @@ fn inf_coords(x: isize, y: isize) -> usize {
     let h = HEIGHT as isize;
     let ind_x = (x + w) % w;
     let ind_y = (y + h) % h;
-    let index = (ind_y * h) + ind_x;
+    let index = (ind_y * w) + ind_x;
 
     index as usize
 }
@@ -182,7 +182,8 @@ impl Grid {
     }
 
     pub fn cell_at(&self, row: usize, col: usize) -> &Cell {
-        &self.cells[(row * self.width) + col]
+        let i = (col * self.width) + row;
+        &self.cells[i]
     }
 
     pub fn cell_at_pt(&self, loc: Vector2<f32>) -> &Cell {
@@ -192,7 +193,13 @@ impl Grid {
         let x = ((w + loc.x) % w) as usize;
         let y = ((h + loc.y) % h) as usize;
 
-        &self.cells[(x * self.width) + y]
+        let i = (y * self.width) + x;
+        if i > self.cells.len() {
+            println!("out of bounds!");
+            dbg!(x, y, w, h, i);
+        }
+
+        &self.cells[(y * self.width) + x]
     }
 
     pub fn cell_at_pt_mut(&mut self, loc: Vector2<f32>) -> &mut Cell {
@@ -202,7 +209,7 @@ impl Grid {
         let x = ((w + loc.x) % w) as usize;
         let y = ((h + loc.y) % h) as usize;
 
-        &mut self.cells[(x * self.width) + y]
+        &mut self.cells[(y * self.width) + x]
     }
 
     pub fn update(&mut self) {
