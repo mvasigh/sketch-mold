@@ -1,20 +1,24 @@
 use nannou::prelude::*;
 
-const WIDTH: usize = 1600;
-const HEIGHT: usize = 1600;
-const NUM_PARTICLES: usize = 100000;
-const HEADING_DISTANCE: f32 = 1.7;
+const SCALE: usize = 2;
+const SCALE_F32: f32 = SCALE as f32;
+const WIDTH: usize = 400 * SCALE;
+const HEIGHT: usize = 400 * SCALE;
+const NUM_PARTICLES: usize = 60000 * SCALE;
+const HEADING_DISTANCE: f32 = 1.125 * SCALE_F32;
 const SENSE_ANGLE: f32 = PI * 0.5;
-const SENSE_DISTANCE: f32 = 2.0;
+const SENSE_DISTANCE: f32 = 1.25 * SCALE_F32;
 const TURN_ANGLE: f32 = PI * 0.25;
 const DEPOSIT_AMOUNT: f32 = 0.25;
-const DECAY_AMOUNT: f32 = 0.052;
+const DECAY_AMOUNT: f32 = 0.068;
 const BLUR_RADIUS: isize = 1;
+const MIN_CUTOFF: f32 = 0.1;
+const MAX_CUTOFF: f32 = 0.8;
 
-const MIN_COLOR: [u8; 3] = [0, 0, 0];
-const MAX_COLOR: [u8; 3] = [255, 102, 62];
+const MAX_COLOR: [u8; 3] = [0, 0, 0];
+const MIN_COLOR: [u8; 3] = [255, 255, 255];
 
-const IMG_OUTPUT: bool = true;
+const IMG_OUTPUT: bool = false;
 
 fn cart_to_canvas(pt: Vector2) -> Vector2 {
     let x = pt.x + (WIDTH as f32 / 2.0);
@@ -283,26 +287,27 @@ impl Grid {
         let height = self.height as u32;
         let image = nannou::image::ImageBuffer::from_fn(width, height, |x, y| {
             let cell = self.cell_at(x as usize, y as usize);
-            let min = 0.12;
+            let min = MIN_CUTOFF;
+            let max = MAX_CUTOFF;
 
             let r = map_range(
-                clamp(cell.intensity, min, 1.0),
+                clamp(cell.intensity, min, max),
                 min,
-                1.0,
+                max,
                 MIN_COLOR[0],
                 MAX_COLOR[0],
             );
             let g = map_range(
-                clamp(cell.intensity, min, 1.0),
+                clamp(cell.intensity, min, max),
                 min,
-                1.0,
+                max,
                 MIN_COLOR[1],
                 MAX_COLOR[1],
             );
             let b = map_range(
-                clamp(cell.intensity, min, 1.0),
+                clamp(cell.intensity, min, max),
                 min,
-                1.0,
+                max,
                 MIN_COLOR[2],
                 MAX_COLOR[2],
             );
@@ -343,7 +348,7 @@ fn model(app: &App) -> Model {
         .unwrap();
 
     let grid = Grid::new(WIDTH, HEIGHT);
-    let particles = (0..NUM_PARTICLES).map(|_| Particle::center(380.0)).collect();
+    let particles = (0..NUM_PARTICLES).map(|_| Particle::center(WIDTH as f32 * 0.45)).collect();
     let texture = wgpu::TextureBuilder::new()
         .size([width, height])
         .format(wgpu::TextureFormat::Rgba8Unorm)
